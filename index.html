@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Battle Unicorn</title>
+	<meta name="author" content="Pavel Razuvalov">
+	<meta name="description" content="My canvas game">
+	<link rel="stylesheet" href="css/main.css">
+	<link rel="icon" href="favicon.ico">
+</head>
+<body>
+	<div class="game-screen" id="main">
+		<div class="wrapper">
+			<div class="column">
+				<div id="loading">
+					<div class="loading-progress">
+						<div id="loadingBar"></div>
+					</div>
+				</div>
+				<div id="menu">
+					<div class="button" id="start">Start</div>
+					<div class="button">About</div>
+				</div>
+			</div>
+			<div id="mainImage"></div>
+		</div>
+	</div>
+	<div class="game-screen" id="pause">
+		<div class="wrapper">
+			<div class="column">
+				Game paused
+				<div class="button" id="resume">Resume</div>
+			</div>
+			<div id="pauseImage"></div>
+		</div>
+	</div>
+	<div class="game-screen" id="gameOver">
+		<div class="wrapper">
+			<div class="column">
+				<span>Game over</span>
+				<span>Total score: <span id="score"></span></span>
+				<div class="button" id="tryAgain">Try again</div>
+			</div>
+			<div id="gameOverImage"></div>
+		</div>
+	</div>
+	<canvas id="game"></canvas>
+</body>
+<script src="bundle.js"></script>
+</html>

@@ -1,0 +1,83 @@
+@font-face {
+    font-family: 'Overseer';
+    src: url('../font/Overseer.otf');
+}
+
+* {
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    width:  100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: Overseer;
+    font-size: 34pt;
+    color: #14ff17;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    cursor: default;
+}
+
+.game-screen {
+    display: none;
+    width: 100%;
+    height: 100%;
+    position: fixed;
+    box-sizing: border-box;
+    padding: 150px;
+    background-color: black;
+}
+
+.game-screen img {
+    height: 500px;
+}
+
+.game-screen#main {
+    display: block;
+}
+
+.game-screen#main #menu {
+    display: none;
+}
+
+.game-screen .wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: inherit;
+}
+
+.wrapper .column {
+    width: 400px;
+    height: inherit;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.loading-progress {
+    border: 2px solid #14ff17;
+    height: 25px;
+    width: 400px;
+    position: relative;
+}
+
+#loadingBar {
+    height: inherit;
+    width: 0;
+    background-color: #14ff17;
+}
+
+.button {
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+canvas {
+    cursor: none;
+}
