@@ -1,49 +1,136 @@
 <!DOCTYPE html>
-<html>
-<head>
-	<title>Battle Unicorn</title>
-	<meta name="author" content="Pavel Razuvalov">
-	<meta name="description" content="My canvas game">
-	<link rel="stylesheet" href="css/main.css">
-	<link rel="icon" href="favicon.ico">
-</head>
-<body>
-	<div class="game-screen" id="main">
-		<div class="wrapper">
-			<div class="column">
-				<div id="loading">
-					<div class="loading-progress">
-						<div id="loadingBar"></div>
-					</div>
-				</div>
-				<div id="menu">
-					<div class="button" id="start">Start</div>
-					<div class="button">About</div>
-				</div>
-			</div>
-			<div id="mainImage"></div>
-		</div>
-	</div>
-	<div class="game-screen" id="pause">
-		<div class="wrapper">
-			<div class="column">
-				Game paused
-				<div class="button" id="resume">Resume</div>
-			</div>
-			<div id="pauseImage"></div>
-		</div>
-	</div>
-	<div class="game-screen" id="gameOver">
-		<div class="wrapper">
-			<div class="column">
-				<span>Game over</span>
-				<span>Total score: <span id="score"></span></span>
-				<div class="button" id="tryAgain">Try again</div>
-			</div>
-			<div id="gameOverImage"></div>
-		</div>
-	</div>
-	<canvas id="game"></canvas>
-</body>
-<script src="bundle.js"></script>
+<html lang="en">
+
+  <head>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="Battle Unicorn">
+    <meta name="author" content="Pavel Razuvalov">
+
+    <title>Battle Unicorn</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom fonts for this template -->
+    <link href="vendor/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+    <link href="https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic" rel="stylesheet" type="text/css">
+    <link href='https://fonts.googleapis.com/css?family=Cabin:700' rel='stylesheet' type='text/css'>
+
+    <!-- Custom styles for this template -->
+    <link href="css/grayscale.min.css" rel="stylesheet">
+
+  </head>
+
+  <style>
+    img {
+      margin-bottom: 30px;
+      width: 550px;
+    }
+  </style>
+
+  <body id="page-top">
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light fixed-top" id="mainNav">
+      <div class="container">
+        <a class="navbar-brand js-scroll-trigger" href="#page-top">Battle Unicorn</a>
+        <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+          Menu
+          <i class="fa fa-bars"></i>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarResponsive">
+          <ul class="navbar-nav ml-auto">
+            <li class="nav-item">
+              <a class="nav-link js-scroll-trigger" href="https://prazuvalov.github.io/battle-unicorn/game" target="_blank">Play now</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Intro Header -->
+    <header class="masthead">
+      <div class="intro-body">
+        <div class="container">
+          <div class="row">
+            <div class="col-lg-8 mx-auto">
+              <h1 class="brand-heading">Battle Unicorn</h1>
+              <p class="intro-text">Inspired by FoE</p>
+              <a href="#about" class="btn btn-circle js-scroll-trigger">
+                <i class="fa fa-angle-double-down animated"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- About Section -->
+    <section id="about" class="content-section text-center">
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-8 mx-auto">
+            <h2>About</h2>
+            <p>Battle Unicorn is a shooter game based on fandom Fallout Equestria universe.
+              There are constantly spawning enemies and your goal is to kill as much as possible.
+              Initially you have a pistol. Get a higher score by killing enemies to unlock better weapon.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="controls" class="content-section text-center">
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-8 mx-auto">
+            <h2>Controls</h2>
+            <p>Movement: <b>W</b> <b>A</b> <b>S</b> <b>D</b></p>
+            <img src="img/movement.png" alt="">
+            <p>Shoot: <b>Left mouse click</b></p>
+            <p>Reload: <b>R</b></p>
+            <p>Weapon choose: <b>1</b> <b>2</b> <b>3</b></p>
+            <img src="img/shoot.png" alt="">
+            <p>Pause: <b>ESC</b></p>
+            <img src="img/pause.png" alt="">
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="presentation" class="content-section text-center">
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-8 mx-auto">
+            <h2>Presentation</h2>
+            <a href="https://slides.com/prazuvalov/deck-2/live#/" target="_blank">Click me c:</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+      <div class="container text-center">
+        <p>&copy; Rolling Scopes School 2017. All rights belong to ponies</p>
+      </div>
+    </footer>
+
+    <!-- Bootstrap core JavaScript -->
+    <script src="vendor/jquery/jquery.min.js"></script>
+    <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Plugin JavaScript -->
+    <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
+
+    <!-- Google Maps API Key - Use your own API key to enable the map feature. More information on the Google Maps API can be found at https://developers.google.com/maps/ -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCRngKslUGJTlibkQ3FkfTxj3Xss1UlZDA&sensor=false"></script>
+
+    <!-- Custom scripts for this template -->
+    <script src="js/grayscale.min.js"></script>
+
+  </body>
+
 </html>
