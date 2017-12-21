@@ -79,6 +79,11 @@ html, body {
     margin-top: 10px;
 }
 
+a, a:visited {
+    color: #14ff17;
+    text-decoration: none;
+}
+
 canvas {
     cursor: url(../img/aim.png) 24 24, auto;
 }
