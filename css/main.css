@@ -19,10 +19,11 @@ html, body {
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
-    cursor: default;
+    cursor: none;
 }
 
 .game-screen {
+    cursor: default;
     display: none;
     width: 100%;
     height: 100%;
@@ -79,5 +80,5 @@ html, body {
 }
 
 canvas {
-    cursor: none;
+    cursor: url(../img/aim.png) 24 24, auto;
 }

@@ -68,17 +68,19 @@
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__sprite__ = __webpack_require__(1);
+
+
 const images = {};
+const sprites = {};
 const sounds = {};
 const successCallbacks = [],
       progressCallbacks = [],
       errorCallbacks = [];
-let imagesCount = 0,
-    audioCount = 0;
 let totalCount = 0,
     loadedCount;
 
-const _loadImage = src => {
+const _loadImage = (src, cb) => {
 	const image = new Image();
 	image.onload = () => {
 		images[src] = image;
@@ -87,10 +89,8 @@ const _loadImage = src => {
 		for (const cb of progressCallbacks) {
 			cb({ percentage: Math.floor(loadedCount / totalCount * 100) });
 		}
-		if (loadedCount === totalCount) {
-			for (const cb of successCallbacks) {
-				cb();
-			}
+		if (loadedCount === totalCount && typeof cb === 'function') {
+			cb();
 		}
 	};
 
@@ -101,7 +101,7 @@ const _loadImage = src => {
 	image.src = src;
 };
 
-const _loadSound = (src, audioDecoder) => {
+const _loadSound = (src, audioDecoder, cb) => {
 	const request = new XMLHttpRequest();
 	request.open('GET', src, true);
 	request.responseType = 'arraybuffer';
@@ -114,10 +114,8 @@ const _loadSound = (src, audioDecoder) => {
 			for (const cb of progressCallbacks) {
 				cb({ percentage: Math.floor(loadedCount / totalCount * 100) });
 			}
-			if (loadedCount === totalCount) {
-				for (const cb of successCallbacks) {
-					cb();
-				}
+			if (loadedCount === totalCount && typeof cb === 'function') {
+				cb();
 			}
 		}, error => {
 			for (const cb of errorCallbacks) {
@@ -128,35 +126,37 @@ const _loadSound = (src, audioDecoder) => {
 	request.send();
 };
 
-const loadResources = (resources, audioDecoder) => {
+const loadResources = (resources, audioDecoder, sprites) => {
 	totalCount = resources.images.length + resources.sounds.length;
 
-	resources.images.forEach(src => _loadImage(src));
-	resources.sounds.forEach(src => _loadSound(src, audioDecoder));
+	resources.images.forEach(src => _loadImage(src, () => renderResources(sprites)));
+	resources.sounds.forEach(src => _loadSound(src, audioDecoder, () => renderResources(sprites)));
 };
-/* harmony export (immutable) */ __webpack_exports__["c"] = loadResources;
+/* harmony export (immutable) */ __webpack_exports__["d"] = loadResources;
 
 
-// export const loadImages = (images) => {
-// 	if (images instanceof Array) {
-// 		imagesCount = images.length;
-// 		images.forEach(src => _loadImage(src));
-// 	} else {
-// 		imagesCount = 1;
-// 		_loadImage(images);
-// 	}
-// };
+const renderResources = resources => {
+	for (const resource in resources) {
+		sprites[resource] = new __WEBPACK_IMPORTED_MODULE_0__sprite__["a" /* Sprite */](resources[resource]);
+	}
+
+	for (const cb of successCallbacks) {
+		cb();
+	}
+};
+/* unused harmony export renderResources */
+
 
 const onload = cb => successCallbacks.push(cb);
-/* harmony export (immutable) */ __webpack_exports__["d"] = onload;
+/* harmony export (immutable) */ __webpack_exports__["e"] = onload;
 
 
 const onprogress = cb => progressCallbacks.push(cb);
-/* harmony export (immutable) */ __webpack_exports__["e"] = onprogress;
+/* harmony export (immutable) */ __webpack_exports__["f"] = onprogress;
 
 
-const onerror = cb => errorCallbacks.push(cb);
-/* unused harmony export onerror */
+const getSprite = name => sprites[name];
+/* harmony export (immutable) */ __webpack_exports__["c"] = getSprite;
 
 
 const getImage = src => images[src];
@@ -176,19 +176,40 @@ const getSound = src => sounds[src];
 
 
 class Sprite {
-	constructor(src, width, height, speed, imagePosition) {
-		this.image = __WEBPACK_IMPORTED_MODULE_0__loader__["a" /* getImage */](src);
-		this.width = width;
-		this.height = height;
-		this.speed = speed;
-		this.imagePosition = imagePosition;
+	constructor(config) {
+		this.image = __WEBPACK_IMPORTED_MODULE_0__loader__["a" /* getImage */](config.src);
+		this.width = config.width;
+		this.height = config.height;
+		this.animationSpeed = config.animationSpeed;
+		this.imagePosition = config.imagePosition;
 		this.framesCount = Math.floor(this.image.width / this.width);
+		this.statesCount = !this.imagePosition ? Math.floor(this.image.height / this.height) : 1;
+		this.frames = [];
+		for (let i = 0; i < this.statesCount; i++) {
+			this.frames[i] = [];
+			for (let j = 0; j < this.framesCount; j++) {
+				let frame = document.createElement('canvas');
+				frame.width = this.width;
+				frame.height = this.height;
+				frame.getContext('2d').drawImage(this.image, // image
+				j * this.width, // source x
+				this.imagePosition ? this.imagePosition : i * this.height, // source y
+				this.width, // source width
+				this.height, // source height
+				0, // target x
+				0, // target y
+				this.width, // target width
+				this.height // target height
+				);
+				this.frames[i][j] = frame;
+			}
+		}
 		this._index = 0;
 	}
 
 	update(delta) {
-		if (this.speed) {
-			this._index += this.speed * delta;
+		if (this.animationSpeed) {
+			this._index += this.animationSpeed * delta;
 			if (this._index > this.framesCount - 1) {
 				this._index = 0;
 			}
@@ -196,6 +217,14 @@ class Sprite {
 				this._index = this.framesCount - 1;
 			}
 		}
+	}
+
+	getFrame(frame, state) {
+		return this.frames[state ? state : 0][frame];
+	}
+
+	getRandomFrame(state) {
+		return this.frames[state ? state : 0][Math.floor(Math.random() * this.framesCount)];
 	}
 
 	set index(index) {
@@ -221,8 +250,8 @@ class Sprite {
 
 class Character {
 	constructor(x, y, world, config) {
-		this.sprite = new __WEBPACK_IMPORTED_MODULE_0__sprite__["a" /* Sprite */](config.src, config.width, config.height, config.animationSpeed);
-		this.speed = config.movementSpeed;
+		this.sprite = new __WEBPACK_IMPORTED_MODULE_0__sprite__["a" /* Sprite */](config);
+		this.animationSpeed = config.movementSpeed;
 		this.x = x;
 		this.y = y;
 		this.world = world;
@@ -237,8 +266,8 @@ class Character {
 	}
 
 	move(delta, x, y) {
-		let movedX = x * this.speed * delta,
-		    movedY = y * this.speed * delta;
+		let movedX = Math.round(x * this.animationSpeed * delta),
+		    movedY = Math.round(y * this.animationSpeed * delta);
 
 		if (this._isCollidedX(movedX)) {
 			movedX = 0;
@@ -257,6 +286,11 @@ class Character {
 
 		// clamp values
 		this._clampCoordinates();
+
+		return {
+			x: movedX,
+			y: movedY
+		};
 	}
 
 	_updateState(x, y) {
@@ -272,19 +306,6 @@ class Character {
 			this.state = this.direction === 1 ? __WEBPACK_IMPORTED_MODULE_1__constants_states__["a" /* STATES */].idleForward : __WEBPACK_IMPORTED_MODULE_1__constants_states__["a" /* STATES */].idleBackward;
 		}
 	}
-
-	// _collide(x, y) {
-	// 	// check for collisions on sprite sides
-	// 	if (this.x < 0 || (this.x + this.sprite.width) > this.world.width || this.y < 0 || (this.y + this.sprite.height) > this.world.height || // Bounds
-	// 		this.world.isTileNotWalkable(this.x + this.sprite.width / 2, this.y + this.sprite.height)) { // Rocks
-	// 		this.y -= y;
-	// 		this.x -= x;
-	//
-	// 		return true;
-	// 	}
-	//
-	// 	return false;
-	// }
 
 	_isCollidedX(x) {
 		return this.x + x < 0 || this.x + x + this.sprite.width > this.world.width || this.world.isTileNotWalkable(this.x + x + this.sprite.width / 2, this.y + this.sprite.height);
@@ -327,18 +348,16 @@ const STATES = {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__sprite__ = __webpack_require__(1);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__loader__ = __webpack_require__(0);
-
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__loader__ = __webpack_require__(0);
 
 
 class Weapon {
-	constructor(config) {
-		this.spriteForward = new __WEBPACK_IMPORTED_MODULE_0__sprite__["a" /* Sprite */]('img/weapon.png', config.width, config.height, 0, config.spritePosition);
-		this.spriteBackward = new __WEBPACK_IMPORTED_MODULE_0__sprite__["a" /* Sprite */]('img/weapon.png', config.width, config.height, 0, config.spritePosition + config.height);
+	constructor(spriteForward, spriteBackward, config) {
+		this.spriteForward = spriteForward;
+		this.spriteBackward = spriteBackward;
 		this.sprite = this.spriteForward;
 		this.name = config.name;
-		this.fire = new __WEBPACK_IMPORTED_MODULE_0__sprite__["a" /* Sprite */]('img/fire.png', 50, 35);
+		this.fire = __WEBPACK_IMPORTED_MODULE_0__loader__["c" /* getSprite */]('fire');
 		this.damage = config.damage;
 		this.capacity = config.capacity;
 		this.bullets = config.bullets;
@@ -396,9 +415,6 @@ class Weapon {
 const INVERTORY = {
 	pistol: {
 		name: 'pistol',
-		width: 23,
-		height: 16,
-		spritePosition: 0,
 		damage: 9,
 		capacity: 7,
 		bullets: 35,
@@ -407,9 +423,6 @@ const INVERTORY = {
 	},
 	shotgun: {
 		name: 'shotgun',
-		width: 59,
-		height: 21,
-		spritePosition: 32,
 		damage: 50,
 		capacity: 2,
 		bullets: 20,
@@ -418,9 +431,6 @@ const INVERTORY = {
 	},
 	assaultRifle: {
 		name: 'assaultRifle',
-		width: 68,
-		height: 16,
-		spritePosition: 74,
 		damage: 20,
 		capacity: 30,
 		bullets: 120,
@@ -496,6 +506,7 @@ class Game {
 		this.context = context;
 		this.audioContext = audioContext;
 		this.loopedSounds = {};
+		this.framesCount = 0;
 	}
 
 	init() {
@@ -504,7 +515,7 @@ class Game {
 		this.weapons = [];
 		this.enemies = [];
 		this.score = 0;
-		this.world = new __WEBPACK_IMPORTED_MODULE_1__world__["a" /* World */](30, 30, 71, 'img/map.png');
+		this.world = new __WEBPACK_IMPORTED_MODULE_1__world__["a" /* World */](30, 30, __WEBPACK_IMPORTED_MODULE_0__loader__["c" /* getSprite */]('map'));
 		this.keyboard = new __WEBPACK_IMPORTED_MODULE_2__keyboard__["a" /* Keyboard */](__WEBPACK_IMPORTED_MODULE_8__constants_keys__["a" /* KEYS */]);
 		this.mouse = new __WEBPACK_IMPORTED_MODULE_5__mouse__["a" /* Mouse */]();
 		this.player = new __WEBPACK_IMPORTED_MODULE_4__player__["a" /* Player */](this.world, __WEBPACK_IMPORTED_MODULE_12__constants_characters__["a" /* CHARACTERS */].player);
@@ -521,14 +532,14 @@ class Game {
 			if (!this.isPaused) {
 				const probability = Math.random();
 				if (this.score >= 3000 && probability < 0.5) {
-					this.weapons.push(new __WEBPACK_IMPORTED_MODULE_10__weapon__["a" /* Weapon */](__WEBPACK_IMPORTED_MODULE_9__constants_invertory__["a" /* INVERTORY */].assaultRifle));
+					this.weapons.push(new __WEBPACK_IMPORTED_MODULE_10__weapon__["a" /* Weapon */](__WEBPACK_IMPORTED_MODULE_0__loader__["c" /* getSprite */]('assaultRifle'), __WEBPACK_IMPORTED_MODULE_0__loader__["c" /* getSprite */]('assaultRifleBackward'), __WEBPACK_IMPORTED_MODULE_9__constants_invertory__["a" /* INVERTORY */].assaultRifle));
 				} else if (this.score >= 1000 && probability < 0.5) {
-					this.weapons.push(new __WEBPACK_IMPORTED_MODULE_10__weapon__["a" /* Weapon */](__WEBPACK_IMPORTED_MODULE_9__constants_invertory__["a" /* INVERTORY */].shotgun));
+					this.weapons.push(new __WEBPACK_IMPORTED_MODULE_10__weapon__["a" /* Weapon */](__WEBPACK_IMPORTED_MODULE_0__loader__["c" /* getSprite */]('shotgun'), __WEBPACK_IMPORTED_MODULE_0__loader__["c" /* getSprite */]('shotgunBackward'), __WEBPACK_IMPORTED_MODULE_9__constants_invertory__["a" /* INVERTORY */].shotgun));
 				} else {
-					this.weapons.push(new __WEBPACK_IMPORTED_MODULE_10__weapon__["a" /* Weapon */](__WEBPACK_IMPORTED_MODULE_9__constants_invertory__["a" /* INVERTORY */].pistol));
+					this.weapons.push(new __WEBPACK_IMPORTED_MODULE_10__weapon__["a" /* Weapon */](__WEBPACK_IMPORTED_MODULE_0__loader__["c" /* getSprite */]('pistol'), __WEBPACK_IMPORTED_MODULE_0__loader__["c" /* getSprite */]('pistolBackward'), __WEBPACK_IMPORTED_MODULE_9__constants_invertory__["a" /* INVERTORY */].pistol));
 				}
-				this.weapons[this.weapons.length - 1].x = Math.random() * this.world.width;
-				this.weapons[this.weapons.length - 1].y = Math.random() * this.world.height;
+				this.weapons[this.weapons.length - 1].x = Math.floor(Math.random() * this.world.width);
+				this.weapons[this.weapons.length - 1].y = Math.floor(Math.random() * this.world.height);
 
 				console.log('Generated weapon');
 			}
@@ -537,7 +548,8 @@ class Game {
 
 	update(delta) {
 		let dirx = 0,
-		    diry = 0;
+		    diry = 0,
+		    moved;
 
 		if (this.keyboard.isDown(__WEBPACK_IMPORTED_MODULE_8__constants_keys__["a" /* KEYS */].left)) {
 			dirx = -1;
@@ -555,11 +567,11 @@ class Game {
 		this.player.mousey = this.mouse.y;
 
 		this.player.sprite.update(delta);
-		this.player.move(delta, dirx, diry);
+		moved = this.player.move(delta, dirx, diry);
 
-		if ((dirx || diry) && !this.loopedSounds['trot']) {
+		if ((dirx || diry) && !this.loopedSounds['trot'] && (moved.x || moved.y)) {
 			this.playLoopedSound(__WEBPACK_IMPORTED_MODULE_0__loader__["b" /* getSound */]('sound/trot.mp3'), 'trot');
-		} else if (!dirx && !diry && this.loopedSounds['trot']) {
+		} else if ((!dirx && !diry || !moved.x && !moved.y) && this.loopedSounds['trot']) {
 			this.stopLoopedSound('trot');
 		}
 
@@ -654,30 +666,40 @@ class Game {
 		}
 
 		if (isPlayerHinted) {
-			let blood = new __WEBPACK_IMPORTED_MODULE_6__sprite__["a" /* Sprite */](__WEBPACK_IMPORTED_MODULE_13__constants_sprites__["a" /* SPRITES */].blood.src, __WEBPACK_IMPORTED_MODULE_13__constants_sprites__["a" /* SPRITES */].blood.width, __WEBPACK_IMPORTED_MODULE_13__constants_sprites__["a" /* SPRITES */].blood.height);
+			let blood = new __WEBPACK_IMPORTED_MODULE_6__sprite__["a" /* Sprite */](__WEBPACK_IMPORTED_MODULE_13__constants_sprites__["a" /* SPRITES */].blood);
 			blood.index = Math.random() * blood.framesCount;
 			this.blood.push({
 				x: this.player.x + this.player.sprite.width / 2,
 				y: this.player.y + this.player.sprite.height / 2,
 				sprite: blood
 			});
+			setTimeout(() => {
+				this.blood.splice(this.blood.indexOf(blood), 1);
+			}, 10000);
 		}
 
 		if (hitX && hitY) {
 			if (isEnemyHinted) {
-				let blood = new __WEBPACK_IMPORTED_MODULE_6__sprite__["a" /* Sprite */](__WEBPACK_IMPORTED_MODULE_13__constants_sprites__["a" /* SPRITES */].blood.src, __WEBPACK_IMPORTED_MODULE_13__constants_sprites__["a" /* SPRITES */].blood.width, __WEBPACK_IMPORTED_MODULE_13__constants_sprites__["a" /* SPRITES */].blood.height);
+				let blood = new __WEBPACK_IMPORTED_MODULE_6__sprite__["a" /* Sprite */](__WEBPACK_IMPORTED_MODULE_13__constants_sprites__["a" /* SPRITES */].blood);
 				blood.index = Math.random() * blood.framesCount;
 				this.blood.push({
 					x: hitX,
 					y: hitY,
 					sprite: blood
 				});
+				setTimeout(() => {
+					this.blood.splice(this.blood.indexOf(blood), 1);
+				}, 10000);
 			} else {
-				this.bulletHoles.push({
+				let bulletHole = {
 					x: hitX,
 					y: hitY,
-					sprite: new __WEBPACK_IMPORTED_MODULE_6__sprite__["a" /* Sprite */](__WEBPACK_IMPORTED_MODULE_13__constants_sprites__["a" /* SPRITES */].hole.src, __WEBPACK_IMPORTED_MODULE_13__constants_sprites__["a" /* SPRITES */].hole.width, __WEBPACK_IMPORTED_MODULE_13__constants_sprites__["a" /* SPRITES */].hole.height)
-				});
+					sprite: __WEBPACK_IMPORTED_MODULE_0__loader__["c" /* getSprite */]('hole')
+				};
+				this.bulletHoles.push(bulletHole);
+				setTimeout(() => {
+					this.bulletHoles.splice(this.bulletHoles.indexOf(bulletHole), 1);
+				}, 10000);
 			}
 		}
 
@@ -703,65 +725,54 @@ class Game {
 
 		for (let column = startCol; column <= endCol + 1; column++) {
 			for (let row = startRow; row <= endRow + 1; row++) {
-				if (this.world.map[row]) {
-					let x = (column - startCol) * this.world.tileSize + offsetX;
-					let y = (row - startRow) * this.world.tileSize + offsetY;
-					this.context.drawImage(this.world.image, // image
-					this.world.map[row][column] * this.world.tileSize, // source x
-					0, // source y
-					this.world.tileSize, // source width
-					this.world.tileSize, // source height
-					Math.round(x), // target x
-					Math.round(y), // target y
-					this.world.tileSize, // target width
-					this.world.tileSize // target height
-					);
+				if (this.world.map[row] && typeof this.world.map[row][column] !== 'undefined') {
+					let x = Math.floor((column - startCol) * this.world.tileSize + offsetX);
+					let y = Math.floor((row - startRow) * this.world.tileSize + offsetY);
+					this.context.drawImage(this.world.sprite.getFrame(this.world.map[row][column]), x, y);
 				}
 			}
 		}
 
 		// Render blood
 		for (const blood of this.blood) {
-			if (blood.x >= this.camera.x && blood.y >= this.camera.y && blood.x <= this.camera.x + window.innerWidth && blood.y <= this.camera.y + window.innerHeight) {
-				this.context.drawImage(blood.sprite.image, blood.sprite.index * blood.sprite.width, 0, blood.sprite.width, blood.sprite.height, blood.x - this.camera.x - blood.sprite.width / 2, blood.y - this.camera.y - blood.sprite.height / 2, blood.sprite.width, blood.sprite.height);
+			if (this.camera.isInBounds(blood.x, blood.y)) {
+				this.context.drawImage(blood.sprite.getFrame(blood.sprite.index), Math.floor(blood.x - this.camera.x - blood.sprite.width / 2), Math.floor(blood.y - this.camera.y - blood.sprite.height / 2));
 			}
 		}
 
 		// Render bullet holes
 		for (const hole of this.bulletHoles) {
-			if (hole.x >= this.camera.x && hole.y >= this.camera.y && hole.x <= this.camera.x + window.innerWidth && hole.y <= this.camera.y + window.innerHeight) {
-				this.context.drawImage(hole.sprite.image, hole.x - this.camera.x - hole.sprite.width / 2, hole.y - this.camera.y - hole.sprite.height / 2);
+			if (this.camera.isInBounds(hole.x, hole.y)) {
+				this.context.drawImage(hole.sprite.getFrame(0), Math.floor(hole.x - this.camera.x - hole.sprite.width / 2), Math.floor(hole.y - this.camera.y - hole.sprite.height / 2));
 			}
 		}
 
 		// Render weapons
 		for (const weapon of this.weapons) {
-			if (weapon.x >= this.camera.x && weapon.y >= this.camera.y && weapon.x <= this.camera.x + window.innerWidth && weapon.y <= this.camera.y + window.innerHeight) {
-				this.context.drawImage(weapon.sprite.image, 0, weapon.sprite.imagePosition, weapon.sprite.width, weapon.sprite.height, weapon.x - this.camera.x - weapon.sprite.width / 2, weapon.y - this.camera.y - weapon.sprite.height / 2, weapon.sprite.width, weapon.sprite.height);
+			if (this.camera.isInBounds(weapon.x, weapon.y)) {
+				this.context.drawImage(weapon.sprite.getFrame(0), Math.floor(weapon.x - this.camera.x - weapon.sprite.width / 2), Math.floor(weapon.y - this.camera.y - weapon.sprite.height / 2));
 			}
 		}
 
 		// Render player
-		this.context.drawImage(this.player.sprite.image, this.player.sprite.index * this.player.sprite.width, this.player.state * this.player.sprite.height, this.player.sprite.width, this.player.sprite.height, this.player.screenX, this.player.screenY, this.player.sprite.width, this.player.sprite.height);
+		this.context.drawImage(this.player.sprite.getFrame(this.player.sprite.index, this.player.state), this.player.screenX, this.player.screenY);
 
 		// Render enemies
 		for (let enemy of this.enemies) {
-			this.context.drawImage(enemy.sprite.image, enemy.sprite.index * enemy.sprite.width, enemy.state * enemy.sprite.height, enemy.sprite.width, enemy.sprite.height, enemy.x - this.camera.x, enemy.y - this.camera.y, enemy.sprite.width, enemy.sprite.height);
+			if (this.camera.isInBounds(enemy.x, enemy.y) || this.camera.isInBounds(enemy.x + enemy.sprite.width, enemy.y + enemy.sprite.height)) {
+				this.context.drawImage(enemy.sprite.getFrame(enemy.sprite.index, enemy.state), enemy.x - this.camera.x, enemy.y - this.camera.y);
+			}
 		}
 
 		// Render player's weapon
 		if (this.player.currentItem && !this.player.currentItem.isReloading) {
-			this.context.drawImage(this.player.currentItem.sprite.image, 0, this.player.currentItem.sprite.imagePosition, this.player.currentItem.sprite.width, this.player.currentItem.sprite.height, this.player.direction > 0 ? this.player.screenX + this.player.sprite.width : this.player.screenX - this.player.currentItem.sprite.width, this.player.screenY + 35, this.player.currentItem.sprite.width, this.player.currentItem.sprite.height);
+			this.context.drawImage(this.player.currentItem.sprite.getFrame(0), this.player.direction > 0 ? this.player.screenX + this.player.sprite.width : this.player.screenX - this.player.currentItem.sprite.width, this.player.screenY + 35);
 		}
 
 		// Render weapon fire
 		if (this.player.currentItem && this.isFlameAppeared) {
-			this.context.drawImage(this.player.currentItem.fire.image, 0, this.player.direction > 0 ? 0 : this.player.currentItem.fire.height, this.player.currentItem.fire.width, this.player.currentItem.fire.height, this.player.direction > 0 ? this.player.screenX + this.player.sprite.width + this.player.currentItem.sprite.width : this.player.screenX - this.player.currentItem.sprite.width - 50, this.player.screenY + 23, this.player.currentItem.fire.width, this.player.currentItem.fire.height);
+			this.context.drawImage(this.player.currentItem.fire.getFrame(0, this.player.direction > 0 ? 0 : 1), this.player.direction > 0 ? this.player.screenX + this.player.sprite.width + this.player.currentItem.sprite.width : this.player.screenX - this.player.currentItem.sprite.width - 50, this.player.screenY + 23);
 		}
-
-		// Render aim
-		let aim = __WEBPACK_IMPORTED_MODULE_0__loader__["a" /* getImage */]('img/aim.png');
-		this.context.drawImage(aim, this.mouse.x - aim.width / 2, this.mouse.y - aim.height / 2);
 
 		// Render HUD
 		this.context.rect(70, window.innerHeight - 100, 400, 25);
@@ -777,7 +788,7 @@ class Game {
 		this.context.textAlign = 'center';
 
 		// Score
-		this.context.fillText('Score: ' + this.score, window.innerWidth / 2, window.innerHeight - 75);
+		this.context.fillText('Score: ' + this.score, Math.floor(window.innerWidth / 2), window.innerHeight - 75);
 
 		// Weapon
 		if (this.player.currentItem) {
@@ -787,11 +798,11 @@ class Game {
 
 	run() {
 		this._previousElapsed = 0;
-		__WEBPACK_IMPORTED_MODULE_0__loader__["e" /* onprogress */](progress => {
+		__WEBPACK_IMPORTED_MODULE_0__loader__["f" /* onprogress */](progress => {
 			console.log(progress.percentage);
 			document.getElementById('loadingBar').style.width = progress.percentage + '%';
 		});
-		__WEBPACK_IMPORTED_MODULE_0__loader__["d" /* onload */](() => {
+		__WEBPACK_IMPORTED_MODULE_0__loader__["e" /* onload */](() => {
 			this.playLoopedSound(__WEBPACK_IMPORTED_MODULE_0__loader__["b" /* getSound */]('sound/background.mp3'), 'background', 0.2);
 			document.getElementById('loading').style.display = 'none';
 			document.getElementById('menu').style.display = 'block';
@@ -804,7 +815,7 @@ class Game {
 				window.requestAnimationFrame(this.tick.bind(this));
 			};
 		});
-		__WEBPACK_IMPORTED_MODULE_0__loader__["c" /* loadResources */](__WEBPACK_IMPORTED_MODULE_11__constants_resources__["a" /* RESOURCES */], this.audioContext);
+		__WEBPACK_IMPORTED_MODULE_0__loader__["d" /* loadResources */](__WEBPACK_IMPORTED_MODULE_11__constants_resources__["a" /* RESOURCES */], this.audioContext, __WEBPACK_IMPORTED_MODULE_13__constants_sprites__["a" /* SPRITES */]);
 	}
 
 	tick(elapsed) {
@@ -815,6 +826,7 @@ class Game {
 			this.context.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
 			// compute delta time in seconds -- also cap it
+			elapsed = Math.floor(elapsed);
 			let delta = (elapsed - this._previousElapsed) / 1000.0;
 			delta = Math.min(delta, 0.25); // maximum delta of 250 ms
 			this._previousElapsed = elapsed;
@@ -902,30 +914,20 @@ class Game {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__loader__ = __webpack_require__(0);
-
-
 class World {
-	constructor(rows, columns, tileSize, src) {
+	constructor(rows, columns, map) {
 		this.rows = rows;
 		this.columns = columns;
-		this.tileSize = tileSize;
-		this.width = columns * tileSize;
-		this.height = rows * tileSize;
-		this.image = __WEBPACK_IMPORTED_MODULE_0__loader__["a" /* getImage */](src);
+		this.tileSize = map.width;
+		this.width = columns * this.tileSize;
+		this.height = rows * this.tileSize;
+		this.sprite = map;
 
 		this.map = [];
 		for (let row = 0; row < rows; row++) {
 			this.map[row] = [];
 			for (let column = 0; column < columns; column++) {
-				// if (row === 0 || column === 0 || row === rows - 1 || column === columns - 1) {
-				// 	this.map[row][column] = 4;
-				// } else {
-				// 	this.map[row][column] = 0;
-				// }
-
-				const possibility = Math.random(); // We gonna put some rocks
-				if (possibility < 0.1) {
+				if (Math.random() < 0.1) {
 					this.map[row][column] = Math.floor(Math.random() * 5);
 				} else {
 					this.map[row][column] = 0;
@@ -1028,12 +1030,12 @@ class Camera {
 	update() {
 		// assume followed sprite should be placed at the center of the screen
 		// whenever possible
-		this.following.screenX = this.width / 2 - this.following.sprite.width / 2;
-		this.following.screenY = this.height / 2 - this.following.sprite.height / 2;
+		this.following.screenX = Math.floor(this.width / 2 - this.following.sprite.width / 2);
+		this.following.screenY = Math.floor(this.height / 2 - this.following.sprite.height / 2);
 
 		// make the camera follow the sprite
-		this.x = this.following.x - this.following.screenX;
-		this.y = this.following.y - this.following.screenY;
+		this.x = Math.floor(this.following.x - this.following.screenX);
+		this.y = Math.floor(this.following.y - this.following.screenY);
 		// clamp values
 		this.x = Math.max(0, Math.min(this.x, this.maxX));
 		this.y = Math.max(0, Math.min(this.y, this.maxY));
@@ -1050,6 +1052,10 @@ class Camera {
 			this.following.screenY = this.following.y - this.y;
 		}
 	}
+
+	isInBounds(x, y) {
+		return x >= this.x && y >= this.y && x <= this.x + this.width && y <= this.y + this.height;
+	}
 }
 /* harmony export (immutable) */ __webpack_exports__["a"] = Camera;
 
@@ -1064,6 +1070,8 @@ class Camera {
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__constants_states__ = __webpack_require__(3);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__weapon__ = __webpack_require__(4);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__constants_invertory__ = __webpack_require__(5);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__loader__ = __webpack_require__(0);
+
 
 
 
@@ -1072,14 +1080,16 @@ class Camera {
 
 class Player extends __WEBPACK_IMPORTED_MODULE_0__character__["a" /* Character */] {
 	constructor(world, config) {
-		super(world.width / 2, world.height / 2, world, config);
+		super(world.width / 2, world.height / 2, world, config.default);
 		this.defaultSprite = this.sprite;
-		this.activeSprite = new __WEBPACK_IMPORTED_MODULE_1__sprite__["a" /* Sprite */](config.srcActive, config.width, config.height, config.animationSpeed); // lightning unicorn
+		this.activeSprite = new __WEBPACK_IMPORTED_MODULE_1__sprite__["a" /* Sprite */](config.active); // lightning unicorn
 		this.screenX = this.x;
 		this.screenY = this.y;
 
 		this.invertory = {
-			pistol: new __WEBPACK_IMPORTED_MODULE_3__weapon__["a" /* Weapon */](__WEBPACK_IMPORTED_MODULE_4__constants_invertory__["a" /* INVERTORY */].pistol)
+			pistol: new __WEBPACK_IMPORTED_MODULE_3__weapon__["a" /* Weapon */](__WEBPACK_IMPORTED_MODULE_5__loader__["c" /* getSprite */]('pistol'), __WEBPACK_IMPORTED_MODULE_5__loader__["c" /* getSprite */]('pistolBackward'), __WEBPACK_IMPORTED_MODULE_4__constants_invertory__["a" /* INVERTORY */].pistol),
+			shotgun: new __WEBPACK_IMPORTED_MODULE_3__weapon__["a" /* Weapon */](__WEBPACK_IMPORTED_MODULE_5__loader__["c" /* getSprite */]('shotgun'), __WEBPACK_IMPORTED_MODULE_5__loader__["c" /* getSprite */]('shotgunBackward'), __WEBPACK_IMPORTED_MODULE_4__constants_invertory__["a" /* INVERTORY */].shotgun),
+			assaultRifle: new __WEBPACK_IMPORTED_MODULE_3__weapon__["a" /* Weapon */](__WEBPACK_IMPORTED_MODULE_5__loader__["c" /* getSprite */]('assaultRifle'), __WEBPACK_IMPORTED_MODULE_5__loader__["c" /* getSprite */]('assaultRifleBackward'), __WEBPACK_IMPORTED_MODULE_4__constants_invertory__["a" /* INVERTORY */].assaultRifle)
 		};
 		this.currentItem = this.invertory.pistol;
 	}
@@ -1094,8 +1104,8 @@ class Player extends __WEBPACK_IMPORTED_MODULE_0__character__["a" /* Character *
 
 		if (x || y) {
 			this.state = this.direction === 1 ? __WEBPACK_IMPORTED_MODULE_2__constants_states__["a" /* STATES */].moveForward : __WEBPACK_IMPORTED_MODULE_2__constants_states__["a" /* STATES */].moveBackward;
-			if (x * this.direction * this.sprite.speed < 0) {
-				this.sprite.speed = -this.sprite.speed;
+			if (x * this.direction * this.sprite.animationSpeed < 0) {
+				this.sprite.animationSpeed = -this.sprite.animationSpeed;
 			}
 		}
 
@@ -1144,7 +1154,7 @@ class Mouse {
 
 class Enemy extends __WEBPACK_IMPORTED_MODULE_0__character__["a" /* Character */] {
 	constructor(world, player, config) {
-		super(Math.random() * world.width - config.width, Math.random() * world.height - config.height, world, config);
+		super(Math.floor(Math.random() * world.width - config.width), Math.floor(Math.random() * world.height - config.height), world, config);
 		this.name = config.name;
 		this.player = player;
 		this.damage = config.damage;
@@ -1185,8 +1195,6 @@ class Enemy extends __WEBPACK_IMPORTED_MODULE_0__character__["a" /* Character */
 
 		return false;
 	}
-
-	_dealDamage() {}
 }
 /* harmony export (immutable) */ __webpack_exports__["a"] = Enemy;
 
@@ -1229,14 +1237,22 @@ const RESOURCES = {
 "use strict";
 const CHARACTERS = {
 	player: {
-		// movementSpeed, x, y, src, srcActive, width, height, animationSpeed
-		src: 'img/player.png',
-		srcActive: 'img/playerActive.png',
-		width: 106,
-		height: 96,
-		animationSpeed: 16,
-		movementSpeed: 155,
-		health: 100
+		default: {
+			src: 'img/player.png',
+			width: 106,
+			height: 96,
+			animationSpeed: 16,
+			movementSpeed: 155,
+			health: 100
+		},
+		active: {
+			src: 'img/playerActive.png',
+			width: 106,
+			height: 96,
+			animationSpeed: 16,
+			movementSpeed: 155,
+			health: 100
+		}
 	},
 	rat: {
 		name: 'rat',
@@ -1269,6 +1285,52 @@ const SPRITES = {
 		src: 'img/blood.png',
 		width: 50,
 		height: 50
+	},
+	fire: {
+		src: 'img/fire.png',
+		width: 50,
+		height: 35
+	},
+	map: {
+		src: 'img/map.png',
+		width: 71,
+		height: 71
+	},
+	pistol: {
+		src: 'img/weapon.png',
+		width: 23,
+		height: 16,
+		imagePosition: 0
+	},
+	pistolBackward: {
+		src: 'img/weapon.png',
+		width: 23,
+		height: 16,
+		imagePosition: 16
+	},
+	shotgun: {
+		src: 'img/weapon.png',
+		width: 59,
+		height: 21,
+		imagePosition: 32
+	},
+	shotgunBackward: {
+		src: 'img/weapon.png',
+		width: 59,
+		height: 21,
+		imagePosition: 53
+	},
+	assaultRifle: {
+		src: 'img/weapon.png',
+		width: 68,
+		height: 16,
+		imagePosition: 74
+	},
+	assaultRifleBackward: {
+		src: 'img/weapon.png',
+		width: 68,
+		height: 16,
+		imagePosition: 90
 	}
 };
 /* harmony export (immutable) */ __webpack_exports__["a"] = SPRITES;
