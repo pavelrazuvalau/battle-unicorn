@@ -1087,9 +1087,7 @@ class Player extends __WEBPACK_IMPORTED_MODULE_0__character__["a" /* Character *
 		this.screenY = this.y;
 
 		this.invertory = {
-			pistol: new __WEBPACK_IMPORTED_MODULE_3__weapon__["a" /* Weapon */](__WEBPACK_IMPORTED_MODULE_5__loader__["c" /* getSprite */]('pistol'), __WEBPACK_IMPORTED_MODULE_5__loader__["c" /* getSprite */]('pistolBackward'), __WEBPACK_IMPORTED_MODULE_4__constants_invertory__["a" /* INVERTORY */].pistol),
-			shotgun: new __WEBPACK_IMPORTED_MODULE_3__weapon__["a" /* Weapon */](__WEBPACK_IMPORTED_MODULE_5__loader__["c" /* getSprite */]('shotgun'), __WEBPACK_IMPORTED_MODULE_5__loader__["c" /* getSprite */]('shotgunBackward'), __WEBPACK_IMPORTED_MODULE_4__constants_invertory__["a" /* INVERTORY */].shotgun),
-			assaultRifle: new __WEBPACK_IMPORTED_MODULE_3__weapon__["a" /* Weapon */](__WEBPACK_IMPORTED_MODULE_5__loader__["c" /* getSprite */]('assaultRifle'), __WEBPACK_IMPORTED_MODULE_5__loader__["c" /* getSprite */]('assaultRifleBackward'), __WEBPACK_IMPORTED_MODULE_4__constants_invertory__["a" /* INVERTORY */].assaultRifle)
+			pistol: new __WEBPACK_IMPORTED_MODULE_3__weapon__["a" /* Weapon */](__WEBPACK_IMPORTED_MODULE_5__loader__["c" /* getSprite */]('pistol'), __WEBPACK_IMPORTED_MODULE_5__loader__["c" /* getSprite */]('pistolBackward'), __WEBPACK_IMPORTED_MODULE_4__constants_invertory__["a" /* INVERTORY */].pistol)
 		};
 		this.currentItem = this.invertory.pistol;
 	}
