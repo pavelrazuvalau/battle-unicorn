@@ -544,6 +544,8 @@ class Game {
 				console.log('Generated weapon');
 			}
 		}, 10000);
+
+		this._previousElapsed = Date.now();
 	}
 
 	update(delta) {
@@ -716,22 +718,7 @@ class Game {
 
 	render() {
 		// Render map
-		const startCol = Math.floor(this.camera.x / this.world.tileSize);
-		const endCol = startCol + this.camera.width / this.world.tileSize;
-		const startRow = Math.floor(this.camera.y / this.world.tileSize);
-		const endRow = startRow + this.camera.height / this.world.tileSize;
-		const offsetX = -this.camera.x + startCol * this.world.tileSize;
-		const offsetY = -this.camera.y + startRow * this.world.tileSize;
-
-		for (let column = startCol; column <= endCol + 1; column++) {
-			for (let row = startRow; row <= endRow + 1; row++) {
-				if (this.world.map[row] && typeof this.world.map[row][column] !== 'undefined') {
-					let x = Math.floor((column - startCol) * this.world.tileSize + offsetX);
-					let y = Math.floor((row - startRow) * this.world.tileSize + offsetY);
-					this.context.drawImage(this.world.sprite.getFrame(this.world.map[row][column]), x, y);
-				}
-			}
-		}
+		this.context.drawImage(this.world.rendered, -this.camera.x, -this.camera.y);
 
 		// Render blood
 		for (const blood of this.blood) {
@@ -818,7 +805,7 @@ class Game {
 		__WEBPACK_IMPORTED_MODULE_0__loader__["d" /* loadResources */](__WEBPACK_IMPORTED_MODULE_11__constants_resources__["a" /* RESOURCES */], this.audioContext, __WEBPACK_IMPORTED_MODULE_13__constants_sprites__["a" /* SPRITES */]);
 	}
 
-	tick(elapsed) {
+	tick() {
 		if (!this.isPaused) {
 			window.requestAnimationFrame(this.tick.bind(this));
 
@@ -826,10 +813,10 @@ class Game {
 			this.context.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
 			// compute delta time in seconds -- also cap it
-			elapsed = Math.floor(elapsed);
-			let delta = (elapsed - this._previousElapsed) / 1000.0;
+			let now = Date.now();
+			let delta = (now - this._previousElapsed) / 1000;
 			delta = Math.min(delta, 0.25); // maximum delta of 250 ms
-			this._previousElapsed = elapsed;
+			this._previousElapsed = now;
 
 			this.update(delta);
 			this.render();
@@ -924,14 +911,17 @@ class World {
 		this.sprite = map;
 
 		this.map = [];
+		this.rendered = document.createElement('canvas');
+		this.rendered.width = this.width;
+		this.rendered.height = this.height;
+
+		let context = this.rendered.getContext('2d');
+
 		for (let row = 0; row < rows; row++) {
 			this.map[row] = [];
 			for (let column = 0; column < columns; column++) {
-				if (Math.random() < 0.1) {
-					this.map[row][column] = Math.floor(Math.random() * 5);
-				} else {
-					this.map[row][column] = 0;
-				}
+				this.map[row][column] = Math.random() < 0.1 ? Math.floor(Math.random() * 5) : 0;
+				context.drawImage(this.sprite.getFrame(this.map[row][column]), column * this.tileSize, row * this.tileSize);
 			}
 		}
 	}
